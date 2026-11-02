@@ -43,3 +43,26 @@ def get_products(session: Session = Depends(get_session)):
     products = session.exec(select(product)).all()
     return products
     
+class ProductIn(SQLModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = " "
+    price_cents: int = Field(gt=0)
+    stock: int = Field(default=0, ge=0)
+    emoji: str = "📦"
+
+@app.get("/products/{product_id}", response_model=product)    
+
+def get_product(product_id: int, session: Session = Depends(get_session)):
+    item = session.get(product,product_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return item
+
+@app.post("/products", response_model=product,status_code=201)
+def create_product(product_in: ProductIn, session: Session = Depends(get_session)):
+    item = product(**product_in.model_dump())
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
