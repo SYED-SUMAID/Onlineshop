@@ -66,3 +66,20 @@ def create_product(product_in: ProductIn, session: Session = Depends(get_session
     session.refresh(item)
     return item
 
+class ProductPatch(SQLModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    price_cents: Optional[int] = Field(default=None, gt=0)
+    stock: Optional[int] = Field(default=None, ge=0)
+    emoji: Optional[str] = None
+
+@app.patch("/products/{product_id}", response_model=product)
+def update_product(product_id: int, product_patch: ProductPatch, session: Session = Depends(get_session)):
+    item = session.get(product, product_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Product not found")
+    for field, value in product_patch.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    session.commit()
+    session.refresh(item)
+    return item
