@@ -83,3 +83,12 @@ def update_product(product_id: int, product_patch: ProductPatch, session: Sessio
     session.commit()
     session.refresh(item)
     return item
+
+@app.delete("/products/{product_id}", status_code=204)
+def delete_product(product_id: int, session: Session = Depends(get_session)):
+    item = session.get(product, product_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Product not found")
+    session.delete(item)
+    session.commit()
+    return {"message": "Product deleted successfully"}
